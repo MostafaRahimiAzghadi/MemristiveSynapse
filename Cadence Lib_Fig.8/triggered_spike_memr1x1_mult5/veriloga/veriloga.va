@@ -1,0 +1,111 @@
+// VerilogA for memr, triggered_spike, veriloga
+
+`include "constants.vams"
+`include "disciplines.vams"
+
+
+
+
+module triggered_spike(vin, vout, vsw, vsw2);
+inout vin;
+electrical vin;
+inout vout;
+electrical vout;
+inout vsw;
+electrical vsw;
+inout vsw2;
+electrical vsw2;
+parameter real tfall_sw = 1u ;
+parameter real trise_sw = 1u ;
+parameter real Vsw_on = 1 ;
+parameter real Vsw_off = -1 ;
+parameter real ttail = 700m;
+parameter real tspike = 0 ;
+parameter real VB = -1.05 ;
+parameter real Vrest = 0.0 ;
+parameter real VA = 0 ;
+parameter real tfall = 100u ;
+parameter real trise = 100u ;
+//parameter real tdel = 0.0 ;
+parameter real vtrans = 1.0 ;
+//parameter real vlogic_low = 0.0 ;
+//parameter real vlogic_high = 0.0 ;
+//parameter real pulse_width = 0.0 ;
+
+
+
+real start;
+real Ttot;
+real verr_n_start;
+real verr_val;
+real Time;
+real vin_delay;
+
+
+analog begin
+
+    @ ( initial_step ) begin
+       start = 1e20;
+       Ttot = trise+tspike+tfall+ttail;
+       verr_n_start=0.0;
+       verr_val=0.0;
+       Time=0.0;
+    end
+
+  // vin_delay = absdelay(V(vin),100u,5);
+ 
+   @ (cross(absdelay(V(vin),1.2m) - vtrans,+1)) begin   // This delay represents epsilon in the formula and basically helps to look at the post(n-1) signal (1.2ms) before it restarts becuase of new post arrival.   
+        start = $abstime;
+        @ ( timer( start));
+    end
+
+    Time = $abstime - start;
+    if(Time < 0m) begin
+        V(vout) <+ Vrest;
+    end else if (Time < trise) begin
+        V(vout) <+ Vrest + (VA-Vrest) * Time / trise;
+        @ ( timer( start + trise));
+    end else if (Time < trise + tspike) begin
+        V(vout) <+ VA;
+        @ ( timer( start + trise + tspike ));
+    end else if (Time < trise + tspike + tfall) begin
+        V(vout) <+ VA + (VB-VA) * (Time - trise - tspike)/tfall;
+        @ ( timer( start + trise + tspike + tfall));
+    end else if (Time < trise + tspike + tfall + ttail) begin
+        V(vout) <+ VB +(Vrest - VB) * (Time - trise -tspike - tfall)/ttail;
+    end else begin
+        V(vout) <+ Vrest;
+    end
+
+    if(Time < 0m) begin
+        V(vsw) <+ Vsw_off;
+    end else if (Time < trise_sw) begin
+        V(vsw) <+ Vsw_off + (Vsw_on-Vsw_off) * (Time) / trise_sw;
+        @ ( timer(start + trise_sw));
+    end else if (Time < Ttot - tfall_sw) begin
+        V(vsw) <+ Vsw_on;
+        @ ( timer(start + Ttot - tfall_sw));
+    end else if (Time < Ttot) begin
+        V(vsw) <+ Vsw_on + (Vsw_off-Vsw_on) * ((Time) - Ttot + tfall_sw)/tfall_sw;
+        @ ( timer(start + Ttot));
+    end else begin
+        V(vsw) <+ Vsw_off;
+    end
+
+    if(Time < trise_sw) begin
+        V(vsw2) <+ Vsw_off;
+    end else if (Time < 2*trise_sw) begin
+        V(vsw2) <+ Vsw_off + (Vsw_on-Vsw_off) * (Time-trise_sw) / trise_sw;
+        @ ( timer(start + 2*trise_sw));
+    end else if (Time < Ttot - 2*tfall_sw) begin
+        V(vsw2) <+ Vsw_on;
+        @ ( timer(start + Ttot - 2*tfall_sw));
+    end else if (Time < Ttot - tfall_sw) begin
+        V(vsw2) <+ Vsw_on + (Vsw_off-Vsw_on) * ((Time) - Ttot + 2*tfall_sw)/tfall_sw;
+        @ ( timer(start + Ttot - tfall_sw));
+    end else begin
+        V(vsw2) <+ Vsw_off;
+    end
+end
+
+endmodule

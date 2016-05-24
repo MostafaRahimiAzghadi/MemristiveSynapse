@@ -1,0 +1,16 @@
+#
+# Edit Lock-Stake file. CAUTION: Please do not change.
+#
+# Information about current Edit Lock Owner.
+#
+LockStakeVersion               1.1
+LoginName                      Guest
+HostName                       nguyen.dao
+ProcessIdentifier              31444
+ProcessCreationTime_UTC        1462940541
+ProcessCreationTime_Readable   Wed May 11 14:22:21 2016 EST
+AppIdentifier                  OA File System Design Manager
+OSType                         unix
+ReasonForPlacingEditLock       OpenAccess edit lock
+FilePathUsedToEditLock         /home/Guest/memr_synapse/triggered_spike_memr1x1_mult5_post/symbol/symbol.oa.cdslck
+TimeEditLocked                 Wed May 11 20:40:29 2016 EST
